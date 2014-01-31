@@ -1,7 +1,7 @@
 import datetime
 
 class timespan(object):
-    def __init__(self, start, end):
+    def __init__(self, start, end, opaque=None):
         self.start = start
         if isinstance(end, datetime.timedelta):
             elapsed = end
@@ -12,6 +12,7 @@ class timespan(object):
             raise TypeError
         self.end = end
         self.elapsed = elapsed
+        self.opaque_data = opaque
 
     def __repr__(self):
         return "<timespan %s => %s>" % (repr(self.start), repr(self.end))
@@ -19,6 +20,20 @@ class timespan(object):
     def __cmp__(self, other):
         return cmp(self.start, other.start)
 
+    def opaque(self):
+        return self.opaque_data
+
+    def overlap(self, t1, t2):
+        if t1 < self.start:
+            a = self.start
+        else:
+            a = t1
+        if t2 < self.end:
+            b = t2
+        else:
+            b = self.end
+        return (b-a).total_seconds()
+            
 class timelayer(object):
     def __init__(self, *timespans):
         timespans = sorted(timespans)
@@ -84,7 +99,13 @@ class timelayer(object):
 
         self._timespans = list(sorted(self._timespans + list(timespans)))
 
-    
+    def spans_containing(self, t1):
+        spans = []
+        for ts in self._timespans:
+            if t1 >= ts.start and t1 < ts.end:
+                spans.append(ts)
+        return spans
+
 import doctest
 if __name__ == '__main__':
     doctest.testfile("timelines.txt")
